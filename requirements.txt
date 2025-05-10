@@ -1,0 +1,5 @@
+torch==2.0.1
+torchaudio==2.0.2
+speechbrain==0.5.15
+numpy
+scipy
