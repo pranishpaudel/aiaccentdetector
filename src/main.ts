@@ -35,6 +35,7 @@ app.post('/api/video', async (req: Request, res: Response): Promise<void> => {
     res.status(202).json({ 
       task_id: taskId, 
       status: 'pending',
+      progress: 0,
       message: 'Processing started' 
     });
 
@@ -70,9 +71,12 @@ async function processVideo(url: string, taskId: string): Promise<void> {
   try {
     // Update task status
     taskManager.updateTaskStatus(taskId, 'processing');
+    taskManager.updateTaskProgress(taskId, 5); // Initial progress
     console.log(`Processing video for task ${taskId} from URL: ${url}`);
     
-    // Convert MP4 to WAV
+    // Convert MP4 to WAV - this is about 30% of the work
+    taskManager.updateTaskProgress(taskId, 10);
+    console.log(`Downloading and converting video to WAV...`);
     const wavPath = await mp4UrlToWav(url);
     if (!wavPath) {
       taskManager.setTaskError(taskId, 'Failed to convert video to WAV');
@@ -80,20 +84,36 @@ async function processVideo(url: string, taskId: string): Promise<void> {
     }
     
     tempFiles.push(wavPath);
+    taskManager.updateTaskProgress(taskId, 30);
     
-    // Break into chunks
+    // Break into chunks - this is about 10% of the work
+    console.log(`Breaking audio into chunks...`);
     const chunkPaths = await breakAudioIntoChunks(wavPath);
     tempFiles.push(...chunkPaths);
+    taskManager.updateTaskProgress(taskId, 40);
     
-    // Process each chunk and collect results
+    // Process each chunk and collect results - this is about 50% of the work
     const chunkResults = [];
-    for (const chunkPath of chunkPaths) {
-      try {
-        const result = await processChunk(chunkPath);
-        chunkResults.push(result);
-      } catch (error) {
-        console.error(`Skipping chunk ${chunkPath} due to error`);
-        // Continue processing other chunks even if one fails
+    const totalChunks = chunkPaths.length;
+    
+    if (totalChunks > 0) {
+      console.log(`Processing ${totalChunks} audio chunks...`);
+      const progressPerChunk = 50 / totalChunks; // Distribute 50% across all chunks
+      
+      for (let i = 0; i < chunkPaths.length; i++) {
+        const chunkPath = chunkPaths[i];
+        try {
+          const result = await processChunk(chunkPath);
+          chunkResults.push(result);
+          
+          // Update progress after each chunk (40% + up to 50% based on chunk progress)
+          const chunkProgress = 40 + ((i + 1) * progressPerChunk);
+          taskManager.updateTaskProgress(taskId, chunkProgress);
+          console.log(`Processed chunk ${i + 1}/${totalChunks} (${Math.round(chunkProgress)}%)`);
+        } catch (error) {
+          console.error(`Skipping chunk ${chunkPath} due to error`);
+          // Continue processing other chunks even if one fails
+        }
       }
     }
     
@@ -102,11 +122,13 @@ async function processVideo(url: string, taskId: string): Promise<void> {
       return;
     }
     
-    // Calculate final result
+    // Calculate final result - last 10% of work
+    taskManager.updateTaskProgress(taskId, 90);
+    console.log(`Calculating final results...`);
     const averageResult = calculateAverageResult(chunkResults);
     console.log(`Task ${taskId} completed with result:`, averageResult);
     
-    // Store result in task manager
+    // Store result in task manager - this sets progress to 100%
     taskManager.setTaskResult(taskId, {
       ...averageResult,
       chunk_results: chunkResults // Include individual chunk results for reference

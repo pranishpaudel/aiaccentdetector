@@ -2,3 +2,4 @@ pretrained_models
 node_modules
 dist
 tmp
+.env

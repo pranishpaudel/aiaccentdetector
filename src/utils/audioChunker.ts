@@ -74,7 +74,7 @@ export function calculateAverageResult(results: any[]): any {
   results.forEach(result => {
     const accent = result.accent;
     accentCounts[accent] = (accentCounts[accent] || 0) + 1;
-    totalScore += result.score || 0; // <- updated from 'confidence' to 'score'
+    totalScore += result.score || 0; 
   });
   
   let mostFrequentAccent = '';
