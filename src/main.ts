@@ -22,7 +22,7 @@ app.post('/api/video', async (req: Request, res: Response): Promise<void> => {
     const { url } = req.body;
 
     // Basic validation
-    if (!url || typeof url !== 'string' || !url.endsWith('.mp4')) {
+    if (!url || typeof url !== 'string') {
       res.status(400).json({ error: 'Invalid or missing MP4 URL' });
       return;
     }
