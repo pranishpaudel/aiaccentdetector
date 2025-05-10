@@ -3,7 +3,10 @@ version: '3'
 services:
   accent-classifier:
     build: .
-    volumes:
-      - ./:/data
+    ports:
+      - "5000:5000"
     environment:
       - PYTHONUNBUFFERED=1
+    volumes:
+      - ./pretrained_models:/app/pretrained_models
+    restart: unless-stopped

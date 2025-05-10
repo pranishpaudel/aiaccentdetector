@@ -1,5 +1,9 @@
 torch==2.0.1
 torchaudio==2.0.2
 speechbrain==0.5.15
-numpy
+numpy==1.24.3
 scipy
+flask==2.3.3
+Werkzeug==2.3.7
+requests
+gunicorn

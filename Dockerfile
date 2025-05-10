@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.9-slim
 
 WORKDIR /app
 
@@ -15,7 +15,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
-COPY accent_classification.py .
+COPY app.py .
 
-# Set the entrypoint
-ENTRYPOINT ["python", "accent_classification.py"]
+# Create directory for temporary file uploads
+RUN mkdir -p /tmp/uploads && chmod 777 /tmp/uploads
+
+# Expose port for Flask application
+EXPOSE 5000
+
+# Command to run the application
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
