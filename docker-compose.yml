@@ -9,5 +9,5 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./pretrained_models:/app/pretrained_models
+      - ./accent-detector/pretrained_models:/app/pretrained_models
     restart: unless-stopped
