@@ -2,7 +2,8 @@ version: '3'
 
 services:
   accent-classifier:
-    build: .
+    build:
+     context: ./accent-detector
     ports:
       - "5000:5000"
     environment:
