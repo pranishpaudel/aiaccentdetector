@@ -11,3 +11,14 @@ services:
     volumes:
       - ./accent-detector/pretrained_models:/app/pretrained_models
     restart: unless-stopped
+    
+  nodejs-app:
+    build:
+      context: .
+    ports:
+      - "8001:8001"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - accent-classifier
+    restart: unless-stopped

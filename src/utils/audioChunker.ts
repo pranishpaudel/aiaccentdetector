@@ -42,7 +42,7 @@ export async function breakAudioIntoChunks(wavPath: string, chunkDuration: numbe
 }
 
 // Function to process a single chunk
-export async function processChunk(chunkPath: string, apiUrl: string = 'http://localhost:5000/classify'): Promise<any> {
+export async function processChunk(chunkPath: string, apiUrl: string = 'http://accent-classifier:5000/classify'): Promise<any> {
   console.log(`Processing chunk: ${chunkPath}`);
   
   const FormData = (await import('form-data')).default;
