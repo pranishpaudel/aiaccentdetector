@@ -30,8 +30,12 @@ Please write a short and simple summary:
 4. Use a friendly tone that a non-technical person can understand.
 `;
 
-  const summary = await llm.invoke(prompt);
-  return summary.trim();
+  try {
+    const summary = await llm.invoke(prompt);
+    return summary.trim();
+  } catch (error) {
+    return `The given accent is ${result.accent} with a confidence of ${result.confidence}. The system processed ${result.processed_chunks} audio chunks.`;
+  }
 }
 
 export default generateSummary;
