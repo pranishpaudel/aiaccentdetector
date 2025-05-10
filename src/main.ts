@@ -7,6 +7,8 @@ import {
   cleanupTempFiles 
 } from './utils/audioChunker.js';
 import { taskManager } from './utils/taskManager.js';
+import askQuestion from './utils/askOpenAI.js';
+import generateSummary from './utils/askOpenAI.js';
 
 const app = express();
 app.use(express.json());
@@ -63,6 +65,8 @@ app.get('/api/tasks/:taskId', (req: Request, res: Response) => {
   
   res.json(task);
 });
+
+
 
 // Function to process video asynchronously
 async function processVideo(url: string, taskId: string): Promise<void> {
@@ -126,12 +130,19 @@ async function processVideo(url: string, taskId: string): Promise<void> {
     taskManager.updateTaskProgress(taskId, 90);
     console.log(`Calculating final results...`);
     const averageResult = calculateAverageResult(chunkResults);
+    console.log(`Final result:`, averageResult);  
+    // Generate summary with OpenAI
+    console.log(`Generating summary with OpenAI...`);
+    taskManager.updateTaskProgress(taskId, 95);
+    const summary = await generateSummary(averageResult);
+    
     console.log(`Task ${taskId} completed with result:`, averageResult);
     
-    // Store result in task manager - this sets progress to 100%
+    // Store result in task manager 
     taskManager.setTaskResult(taskId, {
       ...averageResult,
-      chunk_results: chunkResults // Include individual chunk results for reference
+      summary: summary,
+      chunk_results: chunkResults 
     });
     
   } catch (error) {
@@ -143,7 +154,7 @@ async function processVideo(url: string, taskId: string): Promise<void> {
   }
 }
 
-// Periodic cleanup of old tasks (run every hour)
+
 setInterval(() => {
   taskManager.cleanupOldTasks();
 }, 60 * 60 * 1000);
