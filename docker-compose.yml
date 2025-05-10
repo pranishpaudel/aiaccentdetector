@@ -19,6 +19,7 @@ services:
       - "8001:8001"
     environment:
       - NODE_ENV=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       - accent-classifier
     restart: unless-stopped
