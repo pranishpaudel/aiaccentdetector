@@ -13,11 +13,11 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
+app.get('/api/health', (req, res) => {
+  res.send('I am healthy');
 });
 
-app.post('/video',async (req, res) => {
+app.post('/api/video',async (req, res) => {
   const { url } = req.body;
 
   // Basic validation
