@@ -111,7 +111,7 @@ POST https://pranishpdl.ai/api/video
 Content-Type: application/json
 
 {
-  "url": "https://pshow.s3.ap-south-1.amazonaws.com/longvideosample+(online-video-cutter.com)+(1).mp4" //This is a real video link of brtish accent which you can try
+  "url": "https://pshow.s3.ap-south-1.amazonaws.com/british.mp4" //This is a real video link of brtish accent which you can try
 }
 ```
 
