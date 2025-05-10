@@ -68,18 +68,15 @@ export async function processChunk(chunkPath: string, apiUrl: string = 'http://l
 export function calculateAverageResult(results: any[]): any {
   if (results.length === 0) return {};
   
-  // Initialize counters for each accent
   const accentCounts: Record<string, number> = {};
-  let totalConfidence = 0;
+  let totalScore = 0;
   
-  // Count occurrences of each accent and sum confidence scores
   results.forEach(result => {
     const accent = result.accent;
     accentCounts[accent] = (accentCounts[accent] || 0) + 1;
-    totalConfidence += result.confidence || 0;
+    totalScore += result.score || 0; // <- updated from 'confidence' to 'score'
   });
   
-  // Find the most frequent accent
   let mostFrequentAccent = '';
   let highestCount = 0;
   
@@ -90,8 +87,7 @@ export function calculateAverageResult(results: any[]): any {
     }
   }
   
-  // Calculate average confidence
-  const averageConfidence = totalConfidence / results.length;
+  const averageConfidence = totalScore / results.length;
   
   return {
     accent: mostFrequentAccent,
@@ -103,6 +99,7 @@ export function calculateAverageResult(results: any[]): any {
     processed_chunks: results.length
   };
 }
+
 
 // Clean up temporary files
 export function cleanupTempFiles(files: string[]): void {
