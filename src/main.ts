@@ -140,8 +140,9 @@ async function processVideo(url: string, taskId: string): Promise<void> {
     
     // Store result in task manager 
     taskManager.setTaskResult(taskId, {
+        summary: summary,
       ...averageResult,
-      summary: summary,
+  
       chunk_results: chunkResults 
     });
     

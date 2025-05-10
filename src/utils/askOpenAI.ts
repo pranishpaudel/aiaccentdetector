@@ -25,7 +25,7 @@ ${JSON.stringify(result, null, 2)}
 
 Please write a short and simple summary:
 1. Start by explaining what accent was detected and how confident the system is.
-2. Mention how distinct the accent is (e.g., if it's clearly Australian vs. British or American). Also mention why the accent is distinct than other.
+2. Mention what makes this accent distinct compared to others. For example, what are the key features (like pronunciation of certain vowels or intonation patterns) that make this accent stand out, especially when differentiating it from other similar accents (e.g., Australian vs. British or American)?
 3. Optionally, mention how many audio chunks were analyzed.
 4. Use a friendly tone that a non-technical person can understand.
 `;
