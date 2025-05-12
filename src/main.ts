@@ -1,5 +1,4 @@
 import express, { Request, Response } from 'express';
-import { mp4UrlToWav } from './utils/convertMp4ToWav.js';
 import { 
   breakAudioIntoChunks, 
   processChunk, 
@@ -11,6 +10,7 @@ import askQuestion from './utils/askOpenAI.js';
 import generateSummary from './utils/askOpenAI.js';
 import cors from 'cors';
 import getYouTubeVideoInfo from './utils/youtubeLinkExtractor.js';
+import { urlToWav } from './utils/convertMp4ToWav.js';
 
 const app = express();
 app.use(cors())
@@ -25,9 +25,9 @@ app.get('/api/health', (_req: Request, res: Response) => {
 app.post('/api/video', async (req: Request, res: Response): Promise<void> => {
   try {
     let { url } = req.body;
-    if (/youtube\.com/.test(url)) {
-  url= await getYouTubeVideoInfo(url)
-    }
+  //   if (/youtube\.com/.test(url)) {
+  // url= await getYouTubeVideoInfo(url)
+  //   }
     
     // Basic validation
     if (!url || typeof url !== 'string') {
@@ -87,7 +87,7 @@ async function processVideo(url: string, taskId: string): Promise<void> {
     // Convert MP4 to WAV - this is about 30% of the work
     taskManager.updateTaskProgress(taskId, 10);
     console.log(`Downloading and converting video to WAV...`);
-    const wavPath = await mp4UrlToWav(url);
+    const wavPath = await urlToWav(url);
     if (!wavPath) {
       taskManager.setTaskError(taskId, 'Failed to convert video to WAV');
       return;
