@@ -1,65 +1,42 @@
 import fs from 'fs';
 import path from 'path';
-import ytdl from 'ytdl-core';
+import axios from 'axios';
 import ffmpeg from 'fluent-ffmpeg';
+import { pipeline } from 'stream';
+import { promisify } from 'util';
 import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Downloads audio from a YouTube video URL and converts it to WAV
- * @param youtubeUrl The YouTube video URL
- * @returns Path to the generated WAV file
- */
-export async function youtubeToWav(youtubeUrl: string): Promise<string> {
-  const tempDir = './tmp';
-  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+const streamPipeline = promisify(pipeline);
 
-  const videoPath = path.join(tempDir, `input-${uuidv4()}.mp4`);
-  const audioFilename = `${uuidv4()}-${Date.now()}.wav`;
-  const audioPath = path.join(tempDir, audioFilename);
+async function downloadVideo(url: string, outputPath: string): Promise<void> {
+  const response = await axios.get(url, { responseType: 'stream' });
 
-  try {
-    // Download video using ytdl-core
-    await new Promise<void>((resolve, reject) => {
-      ytdl(youtubeUrl, {
-        quality: 'lowest', // Just need audio quality
-        filter: 'audioonly', // Only get audio
-      })
-        .pipe(fs.createWriteStream(videoPath))
-        .on('finish', resolve)
-        .on('error', reject);
-    });
-
-    // Convert to WAV using ffmpeg
-    await new Promise<void>((resolve, reject) => {
-      ffmpeg(videoPath)
-        .noVideo()
-        .audioCodec('pcm_s16le')
-        .format('wav')
-        .on('end', resolve as any)
-        .on('error', reject)
-        .save(audioPath);
-    });
-
-    return audioPath;
-  } catch (error) {
-    console.error('Error in youtubeToWav:', error);
-    throw error;
-  } finally {
-    // Clean up input video regardless of success/failure
-    if (fs.existsSync(videoPath)) {
-      fs.unlinkSync(videoPath);
-    }
+  if (response.status !== 200) {
+    throw new Error(`Failed to download video: ${response.statusText}`);
   }
+
+  await streamPipeline(response.data, fs.createWriteStream(outputPath));
 }
 
-// For non-YouTube URLs, keep your original function
+/**
+ * Converts a downloaded MP4 video to WAV audio
+ */
+function convertToWav(inputPath: string, outputPath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    ffmpeg(inputPath)
+      .noVideo()
+      .audioCodec('pcm_s16le')
+      .format('wav')
+      .on('end', () => resolve())
+      .on('error', reject)
+      .save(outputPath);
+  });
+}
+
+/**
+ * Main function: from URL to .wav file path
+ */
 export async function mp4UrlToWav(url: string): Promise<string> {
-  // If it's a YouTube URL, use the YouTube-specific function
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    return youtubeToWav(url);
-  }
-  
-  // Original implementation for non-YouTube URLs
   const tempDir = './tmp';
   if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
@@ -68,40 +45,14 @@ export async function mp4UrlToWav(url: string): Promise<string> {
   const audioPath = path.join(tempDir, audioFilename);
 
   try {
-    // Use axios for non-YouTube URLs
-    const axios = await import('axios');
-    const { pipeline } = await import('stream');
-    const { promisify } = await import('util');
-    const streamPipeline = promisify(pipeline);
-    
-    const response = await axios.default.get(url, { 
-      responseType: 'stream',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
-
-    if (response.status !== 200) {
-      throw new Error(`Failed to download video: ${response.statusText}`);
-    }
-
-    await streamPipeline(response.data, fs.createWriteStream(videoPath));
-    
-    await new Promise<void>((resolve, reject) => {
-      ffmpeg(videoPath)
-        .noVideo()
-        .audioCodec('pcm_s16le')
-        .format('wav')
-        .on('end', resolve as any)
-        .on('error', reject)
-        .save(audioPath);
-    });
-
-    return audioPath;
+    await downloadVideo(url, videoPath);
+    await convertToWav(videoPath, audioPath);
   } finally {
     // Clean up input video regardless of success/failure
-    if (fs.existsSync(videoPath)) {
-      fs.unlinkSync(videoPath);
-    }
+    fs.unlink(videoPath, (err) => {
+      if (err) console.error(`Error deleting ${videoPath}:`, err);
+    });
   }
+
+  return audioPath;
 }
