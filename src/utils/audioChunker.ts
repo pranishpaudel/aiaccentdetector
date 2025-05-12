@@ -68,34 +68,51 @@ export async function processChunk(chunkPath: string, apiUrl: string = 'http://a
 export function calculateAverageResult(results: any[]): any {
   if (results.length === 0) return {};
   
-  const accentCounts: Record<string, number> = {};
-  let totalScore = 0;
+  // Track total score per accent and count
+  const accentData: Record<string, {totalScore: number, count: number}> = {};
   
   results.forEach(result => {
     const accent = result.accent;
-    accentCounts[accent] = (accentCounts[accent] || 0) + 1;
-    totalScore += result.score || 0; 
+    const score = result.score || 0;
+    
+    if (!accentData[accent]) {
+      accentData[accent] = { totalScore: 0, count: 0 };
+    }
+    
+    accentData[accent].totalScore += score;
+    accentData[accent].count += 1;
   });
   
-  let mostFrequentAccent = '';
-  let highestCount = 0;
+  // Calculate the weighted average score for each accent
+  let highestWeightedScore = -1;
+  let mostConfidentAccent = '';
+  const distribution: {accent: string, percentage: number, avgScore: number}[] = [];
   
-  for (const [accent, count] of Object.entries(accentCounts)) {
-    if (count > highestCount) {
-      mostFrequentAccent = accent;
-      highestCount = count;
+  Object.entries(accentData).forEach(([accent, data]) => {
+    const percentage = (data.count / results.length) * 100;
+    const avgScore = data.totalScore / data.count;
+    
+    distribution.push({
+      accent,
+      percentage,
+      avgScore
+    });
+    
+    // Choose accent with highest average confidence score
+    if (avgScore > highestWeightedScore) {
+      highestWeightedScore = avgScore;
+      mostConfidentAccent = accent;
     }
-  }
+  });
   
+  // Calculate overall average confidence across all results
+  const totalScore = results.reduce((sum, result) => sum + (result.score || 0), 0);
   const averageConfidence = totalScore / results.length;
   
   return {
-    accent: mostFrequentAccent,
+    accent: mostConfidentAccent,
     confidence: averageConfidence,
-    distribution: Object.entries(accentCounts).map(([accent, count]) => ({
-      accent,
-      percentage: (count / results.length) * 100
-    })),
+    distribution: distribution.map(({accent, percentage}) => ({accent, percentage})),
     processed_chunks: results.length
   };
 }
