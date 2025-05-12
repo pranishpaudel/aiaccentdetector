@@ -8,12 +8,17 @@ import {
 import { taskManager } from './utils/taskManager.js';
 import askQuestion from './utils/askOpenAI.js';
 import generateSummary from './utils/askOpenAI.js';
+import { v4 as uuidv4 } from 'uuid';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import cors from 'cors';
 import { mp4UrlToWav } from './utils/convertMp4ToWav.js';
+import dotenv from 'dotenv';
 
 
 const app = express();
 app.use(cors())
+dotenv.config();
 app.use(express.json());
 
 const PORT = process.env.PORT || 8001;
@@ -160,6 +165,38 @@ async function processVideo(url: string, taskId: string): Promise<void> {
     cleanupTempFiles(tempFiles);
   }
 }
+
+app.get('/api/upload-url', async (_req: Request, res: Response) => {
+  try {
+    const fileId = uuidv4(); 
+    const fileName = `${fileId}.mp4`; 
+    const bucketName = process.env.S3_BUCKET_NAME!;
+    const region = process.env.AWS_REGION!;
+    const key = `uploads/${fileName}`;
+
+    const s3 = new S3Client({
+      region,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
+      }
+    });
+
+    const command = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      ContentType: 'video/mp4',
+    });
+
+    const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 60 * 5 }); // 5 min
+
+    res.status(200).json({ url: presignedUrl, downloadUrl: `https://${bucketName}.s3.${region}.amazonaws.com/${key}` });
+  } catch (error) {
+    console.error('Error generating presigned URL:', error);
+    res.status(500).json({ error: 'Failed to generate upload URL' });
+  }
+});
+
 
 
 setInterval(() => {
