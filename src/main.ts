@@ -9,8 +9,10 @@ import {
 import { taskManager } from './utils/taskManager.js';
 import askQuestion from './utils/askOpenAI.js';
 import generateSummary from './utils/askOpenAI.js';
+import cors from 'cors';
 
 const app = express();
+app.use(cors())
 app.use(express.json());
 
 const PORT = process.env.PORT || 8001;
