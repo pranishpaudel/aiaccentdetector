@@ -10,6 +10,7 @@ import { taskManager } from './utils/taskManager.js';
 import askQuestion from './utils/askOpenAI.js';
 import generateSummary from './utils/askOpenAI.js';
 import cors from 'cors';
+import getYouTubeVideoInfo from './utils/youtubeLinkExtractor.js';
 
 const app = express();
 app.use(cors())
@@ -23,8 +24,11 @@ app.get('/api/health', (_req: Request, res: Response) => {
 
 app.post('/api/video', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { url } = req.body;
-
+    let { url } = req.body;
+    if (/youtube\.com/.test(url)) {
+  url= await getYouTubeVideoInfo(url)
+    }
+    
     // Basic validation
     if (!url || typeof url !== 'string') {
       res.status(400).json({ error: 'Invalid or missing MP4 URL' });
